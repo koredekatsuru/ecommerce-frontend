@@ -17,8 +17,10 @@ export class ProductListComponent implements OnInit {
 
   // new properties for pagination
   thePageNumber: number = 1;
-  thePageSize: number = 50;
+  thePageSize: number = 5;
   theTotalElements: number = 0;
+
+  previousKeyword: string = '';
 
   constructor(
     private productService: ProductService,
@@ -44,10 +46,23 @@ export class ProductListComponent implements OnInit {
   handleSearchProducts(): void {
     const theKeyword: string = this.route.snapshot.paramMap.get('keyword')!;
 
+    // if we have a different keyword than previous
+    // then set thePageNumber to 1
+    if (this.previousKeyword != theKeyword) {
+      this.thePageNumber = 1;
+    }
+    this.previousKeyword = theKeyword;
+
+    console.log(`keyword=${theKeyword}, thePageNumber=${this.thePageNumber}`);
+
     // now search for the products using keyword
-    this.productService.searchProducts(theKeyword).subscribe((data) => {
-      this.products = data;
-    });
+    this.productService
+      .searchProductPaginate(
+        this.thePageNumber - 1,
+        this.thePageSize,
+        theKeyword
+      )
+      .subscribe(this.processResult());
   }
 
   handleListProducts(): void {
@@ -76,23 +91,44 @@ export class ProductListComponent implements OnInit {
 
     this.previousCategoryId = this.currentCategoryId;
 
-    console.log(`currentCategoryId=${this.currentCategoryId}, thePageNumber=${this.thePageNumber}`);
+    console.log(
+      `currentCategoryId=${this.currentCategoryId}, thePageNumber=${this.thePageNumber}`
+    );
 
     // if we have a different category id than previous
     // then set thePageNumber back to 1
     // now get the products for the given category id
     // thePageNumber - 1: FE側は1始まりの見た目、BE側は0始まりのDB
     this.productService
-      .getProductListPaginate(this.thePageNumber -1, this.thePageSize, this.currentCategoryId)
+      .getProductListPaginate(
+        this.thePageNumber - 1,
+        this.thePageSize,
+        this.currentCategoryId
+      )
       .subscribe(this.processResult());
   }
 
   processResult() {
-    return (data: { _embedded: { products: Product[]; }; page: { number: number; size: number; totalElements: number; }; }) => {
+    return (data: {
+      _embedded: { products: Product[] };
+      page: { number: number; size: number; totalElements: number };
+    }) => {
       this.products = data._embedded.products;
       this.thePageNumber = data.page.number + 1; // FE側は1始まりの見た目、BE側は0始まりのDB
       this.thePageSize = data.page.size;
       this.theTotalElements = data.page.totalElements;
     };
+  }
+
+  updatePageSize(pageSize: number) {
+    this.thePageSize = pageSize;
+    this.thePageNumber = 1;
+    this.listProducts();
+  }
+
+  addToCart(theProduct: Product) {
+    console.log(`Adding to cart: ${theProduct.name}, ${theProduct.unitPrice}`);
+
+    // TODO .. do the real work
   }
 }
