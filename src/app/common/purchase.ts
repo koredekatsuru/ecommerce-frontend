@@ -1,4 +1,4 @@
-import { Address } from "cluster";
+import { Address } from "./address";
 import { Customer } from "./customer";
 import { Order } from "./order";
 import { OrderItem } from "./order-item";
@@ -6,7 +6,7 @@ import { OrderItem } from "./order-item";
 export class Purchase {
   customer!: Customer;
   shippingAddress!: Address;
-  billiingAddress!: Address;
+  billingAddress!: Address;
   order!: Order;
   orderItems!: OrderItem[];
 
